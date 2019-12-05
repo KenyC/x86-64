@@ -9,7 +9,6 @@
 {-# language TypeFamilies #-}
 {-# language GADTs #-}
 {-# language DataKinds #-}
-{-# language KindSignatures #-}
 {-# language PolyKinds #-}
 {-# language FlexibleContexts #-}
 {-# language FlexibleInstances #-}
@@ -243,8 +242,8 @@ evalOp op c = case op of
   And_{}  -> mk (.&.)
   Sub_{}  -> mk (-)
   Xor_{}  -> mk xor
-  Cmp_{}  -> mk_ (-) (\a b -> a)
-  Test_{} -> mk_ (.&.) (\a b -> a)
+  Cmp_{}  -> mk_ (-) (const a)
+  Test_{} -> mk_ (.&.) (const a)
   Mov_{}  -> \a b -> ((c, False), b)
   Shl_{}  -> \a b ->
     let i = fromIntegral (b .&. shiftMask)

@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
+{- HLINT ignore -}
 module CodeGen.X86.Examples where
 
 import           Foreign

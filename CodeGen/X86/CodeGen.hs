@@ -4,10 +4,6 @@
 {-# language FlexibleInstances #-}
 {-# language FlexibleContexts #-}
 {-# language PatternSynonyms #-}
-{-# language KindSignatures #-}
-{-# language KindSignatures #-}
-{-# language PatternGuards #-}
-{-# language BangPatterns #-}
 {-# language ViewPatterns #-}
 {-# language TypeFamilies #-}
 {-# language RecursiveDo #-}
@@ -150,7 +146,7 @@ mkRef s@(sizeLen -> sn) offset (Label l_) = CodeBuilder sn sn $ do
   tell $ Right <$> bs
 
 ins :: Int -> a -> [[a]] -> [[a]]
-ins 0 a [] = [a]: []
+ins 0 a [] = [[a]]
 ins 0 a (as:ass) = (a:as): ass
 ins n a [] = []: ins (n-1) a []
 ins n a (as: ass) = as: ins (n-1) a ass
@@ -467,7 +463,7 @@ mkCodeBuilder' = \case
   reg8_ (XMM r) = r .&. 0x7
 
   regprefix :: IsSize s => Size -> Operand r s -> CodeBuilder -> CodeBuilder -> CodeBuilder
-  regprefix s r c im = sizePrefix_ (regs r) s r (extbits r) c im
+  regprefix s r = sizePrefix_ (regs r) s r (extbits r)
 
   regprefix2 :: (IsSize s1, IsSize s) => Operand r1 s1 -> Operand r s -> CodeBuilder -> CodeBuilder
   regprefix2 r r' c = sizePrefix_ (regs r <> regs r') (size r) r (extbits r' `shiftL` 2 .|. extbits r) c mempty
@@ -536,10 +532,10 @@ mkCodeBuilder' = \case
   op2g op dest src = regprefix2' dest src op $ reg2x8 src dest
 
   reg2x8 :: (IsSize s, IsSize s') => Operand r s -> Operand r' s' -> CodeBuilder
-  reg2x8 (RegOp r) x = reg8 (reg8_ r) x
+  reg2x8 (RegOp r) = reg8 (reg8_ r)
 
   op1_ :: IsSize s => Word8 -> Word8 -> Operand r s -> CodeBuilder -> CodeBuilder
-  op1_ r1 r2 dest im = regprefix'' dest r1 (reg8 r2 dest) im
+  op1_ r1 r2 dest = regprefix'' dest r1 (reg8 r2 dest)
 
   op1 :: IsSize s => Word8 -> Word8 -> Operand r s -> CodeBuilder
   op1 a b c = op1_ a b c mempty

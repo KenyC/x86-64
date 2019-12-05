@@ -1,10 +1,8 @@
-{-# language CPP #-}
-{-# language ForeignFunctionInterface #-}
-{-# language BangPatterns #-}
-{-# language ViewPatterns #-}
 {-# language FlexibleInstances #-}
 {-# language FlexibleContexts #-}
+{-# language ViewPatterns #-}
 {-# language TypeFamilies #-}
+{-# language CPP #-}
 module CodeGen.X86.FFI where
 
 -------------------------------------------------------

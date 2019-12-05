@@ -36,8 +36,7 @@ everyNth n xs = take n xs: everyNth n (drop n xs)
 
 showNibble :: (Integral a, Bits a) => Int -> a -> Char
 showNibble n x = toEnum (b + if b < 10 then 48 else 87)
-  where
-  b = fromIntegral $ x `shiftR` (4*n) .&. 0x0f
+  where b = fromIntegral $ x `shiftR` (4 * n) .&. 0x0f
 
 showByte b = [showNibble 1 b, showNibble 0 b]
 
@@ -51,15 +50,23 @@ type Bytes = [Word8]
 
 class HasBytes a where toBytes :: a -> Bytes
 
-instance HasBytes Word8  where toBytes w = [w]
-instance HasBytes Word16 where toBytes w = [fromIntegral w, fromIntegral $ w `shiftR` 8]
-instance HasBytes Word32 where toBytes w = [fromIntegral $ w `shiftR` n | n <- [0, 8.. 24]]
-instance HasBytes Word64 where toBytes w = [fromIntegral $ w `shiftR` n | n <- [0, 8.. 56]]
+instance HasBytes Word8  where
+  toBytes w = [w]
+instance HasBytes Word16 where
+  toBytes w = [fromIntegral w, fromIntegral $ w `shiftR` 8]
+instance HasBytes Word32 where
+  toBytes w = [ fromIntegral $ w `shiftR` n | n <- [0, 8 .. 24] ]
+instance HasBytes Word64 where
+  toBytes w = [ fromIntegral $ w `shiftR` n | n <- [0, 8 .. 56] ]
 
-instance HasBytes Int8  where toBytes w = toBytes (fromIntegral w :: Word8)
-instance HasBytes Int16 where toBytes w = toBytes (fromIntegral w :: Word16)
-instance HasBytes Int32 where toBytes w = toBytes (fromIntegral w :: Word32)
-instance HasBytes Int64 where toBytes w = toBytes (fromIntegral w :: Word64)
+instance HasBytes Int8  where
+  toBytes w = toBytes (fromIntegral w :: Word8)
+instance HasBytes Int16 where
+  toBytes w = toBytes (fromIntegral w :: Word16)
+instance HasBytes Int32 where
+  toBytes w = toBytes (fromIntegral w :: Word32)
+instance HasBytes Int64 where
+  toBytes w = toBytes (fromIntegral w :: Word64)
 
 ------------------------------------------------------- sizes
 
@@ -69,12 +76,12 @@ data Size = S1 | S8 | S16 | S32 | S64 | S128
 
 instance Show Size where
   show = \case
-      S1   -> "bit"
-      S8   -> "byte"
-      S16  -> "word"
-      S32  -> "dword"
-      S64  -> "qword"
-      S128 -> "oword"
+    S1   -> "bit"
+    S8   -> "byte"
+    S16  -> "word"
+    S32  -> "dword"
+    S64  -> "qword"
+    S128 -> "oword"
 
 mkSize  1 = S8
 mkSize  2 = S16
@@ -83,10 +90,10 @@ mkSize  8 = S64
 mkSize 16 = S128
 
 sizeLen = \case
-  S8   ->  1
-  S16  ->  2
-  S32  ->  4
-  S64  ->  8
+  S8   -> 1
+  S16  -> 2
+  S32  -> 4
+  S64  -> 8
   S128 -> 16
 
 class HasSize a where size :: a -> Size
@@ -111,12 +118,12 @@ data SSize (s :: Size) where
 
 instance HasSize (SSize s) where
   size = \case
-      SSize1   -> S1
-      SSize8   -> S8
-      SSize16  -> S16
-      SSize32  -> S32
-      SSize64  -> S64
-      SSize128 -> S128
+    SSize1   -> S1
+    SSize8   -> S8
+    SSize16  -> S16
+    SSize32  -> S32
+    SSize64  -> S64
+    SSize128 -> S128
 
 class IsSize (s :: Size) where
   ssize :: SSize s
@@ -224,9 +231,11 @@ data Addr s = Addr
   }
   deriving (Eq)
 
-type BaseReg s    = Maybe (Reg s)
-data IndexReg s   = NoIndex | IndexReg Scale (Reg s)
+type BaseReg s = Maybe (Reg s)
+
+data IndexReg s = NoIndex | IndexReg Scale (Reg s)
   deriving (Eq)
+
 type Displacement = Maybe Int32
 
 pattern NoDisp = Nothing
@@ -243,47 +252,49 @@ ipRel8 :: Label -> Operand rw S8
 ipRel8 = ipRel
 
 instance IsSize s => Show (Reg s) where
-  show = \case
-      XMM i -> "xmm" ++ show i
-      HighReg i -> (["ah"," ch", "dh", "bh"] ++ repeat err) !! fromIntegral i
-      r@(NormalReg i) -> (!! fromIntegral i) . (++ repeat err) $ case size r of
-          S8   -> ["al", "cl", "dl", "bl", "spl", "bpl", "sil", "dil"] ++ map (++ "b") r8
-          S16  -> r0 ++ map (++ "w") r8
-          S32  -> map ('e':) r0 ++ map (++ "d") r8
-          S64  -> map ('r':) r0 ++ r8
-        where
-          r0 = ["ax", "cx", "dx", "bx", "sp", "bp", "si", "di"]
-          r8 = ["r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"]
-    where
-      err = error $ "show @ RegOp" -- ++ show (s, i)
+  show (XMM i) = "xmm" ++ show i
+  show (HighReg i) =
+    (["ah", " ch", "dh", "bh"] ++ repeat (error ("show @Reg")))
+      !! fromIntegral i
+
+  show r@(NormalReg i) =
+    (!! fromIntegral i) . (++ repeat (error ("show @Reg"))) $ case size r of
+      S8 ->
+        ["al", "cl", "dl", "bl", "spl", "bpl", "sil", "dil"] ++ map (++ "b") r8
+      S16 -> r0 ++ map (++ "w") r8
+      S32 -> map ('e' :) r0 ++ map (++ "d") r8
+      S64 -> map ('r' :) r0 ++ r8
+   where
+    r0 = ["ax", "cx", "dx", "bx", "sp", "bp", "si", "di"]
+    r8 = ["r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"]
 
 instance IsSize s => Show (Addr s) where
   show (Addr b d i) = showSum $ shb b ++ shd d ++ shi i
-    where
-      shb Nothing = []
-      shb (Just x) = [(True, show x)]
-      shd NoDisp = []
-      shd (Disp x) = [(signum x /= (-1), show (abs x))]
-      shi NoIndex = []
-      shi (IndexReg sc x) = [(True, show' (scaleFactor sc) ++ show x)]
-      show' 1 = ""
-      show' n = show n ++ " * "
-      showSum [] = "0"
-      showSum ((True, x): xs) = x ++ g xs
-      showSum ((False, x): xs) = "-" ++ x ++ g xs
-      g = concatMap (\(a, b) -> f a ++ b)
-      f True = " + "
-      f False = " - "
+   where
+    shb Nothing  = []
+    shb (Just x) = [(True, show x)]
+    shd NoDisp   = []
+    shd (Disp x) = [(signum x /= (-1), show (abs x))]
+    shi NoIndex         = []
+    shi (IndexReg sc x) = [(True, show' (scaleFactor sc) ++ show x)]
+    show' 1 = ""
+    show' n = show n ++ " * "
+    showSum []                = "0"
+    showSum ((True , x) : xs) = x ++ g xs
+    showSum ((False, x) : xs) = "-" ++ x ++ g xs
+    g = concatMap (\(a, b) -> f a ++ b)
+    f True  = " + "
+    f False = " - "
 
 instance IsSize s => Show (Operand a s) where
   show = \case
-      ImmOp w -> show w
-      RegOp r -> show r
-      r@(MemOp a) -> show (size r) ++ " [" ++ show a ++ "]"
-      r@(IPMemOp x) -> show (size r) ++ " [" ++ "rel " ++ show x ++ "]"
-    where
-      showp x | x < 0 = " - " ++ show (-x)
-      showp x = " + " ++ show x
+    ImmOp w       -> show w
+    RegOp r       -> show r
+    r@(MemOp   a) -> show (size r) ++ " [" ++ show a ++ "]"
+    r@(IPMemOp x) -> show (size r) ++ " [" ++ "rel " ++ show x ++ "]"
+   where
+    showp x | x < 0 = " - " ++ show (-x)
+    showp x         = " + " ++ show x
 
 instance Show a => Show (Immediate a) where
   show (Immediate x) = show x
@@ -369,17 +380,20 @@ scaleAddress f (Address rs d) = Address (first f <$> rs) $ f d
 instance Num (Address s) where
   fromInteger d = Address [] $ fromInteger d
   negate = scaleAddress negate
-  Address [] t * a = scaleAddress (t*) a
-  a * Address [] t = scaleAddress (t*) a
-  Address rs d + Address rs' d' = Address (f rs rs') (d + d') where
-      f [] rs = rs
-      f rs [] = rs
-      f (p@(t, r): rs) (p'@(t', r'): rs') = case compare r r' of
-          LT -> p: f rs (p': rs')
-          GT -> p': f (p: rs) rs'
-          EQ | t + t' == 0 -> f rs rs'
-             | otherwise   -> (t + t', r): f rs rs'
-  abs = error "abs @Address"
+
+  Address [] t * a            = scaleAddress (t *) a
+  a            * Address [] t = scaleAddress (t *) a
+
+  Address rs d + Address rs' d' = Address (f rs rs') (d + d')   where
+    f []              rs                  = rs
+    f rs              []                  = rs
+    f (p@(t, r) : rs) (p'@(t', r') : rs') = case compare r r' of
+      LT -> p : f rs (p' : rs')
+      GT -> p' : f (p : rs) rs'
+      EQ | t + t' == 0 -> f rs rs'
+         | otherwise   -> (t + t', r) : f rs rs'
+
+  abs    = error "abs @Address"
   signum = error "signum @Address"
 
 makeAddr :: Address s -> Addr s
@@ -543,22 +557,22 @@ pattern NLE = Condition 0xf
 
 instance Show Condition where
   show (Condition x) = case x of
-      0x0 -> "o"
-      0x1 -> "no"
-      0x2 -> "c"
-      0x3 -> "nc"
-      0x4 -> "z"
-      0x5 -> "nz"
-      0x6 -> "be"
-      0x7 -> "nbe"
-      0x8 -> "s"
-      0x9 -> "ns"
-      0xa -> "p"
-      0xb -> "np"
-      0xc -> "l"
-      0xd -> "nl"
-      0xe -> "le"
-      0xf -> "nle"
+    0x0 -> "o"
+    0x1 -> "no"
+    0x2 -> "c"
+    0x3 -> "nc"
+    0x4 -> "z"
+    0x5 -> "nz"
+    0x6 -> "be"
+    0x7 -> "nbe"
+    0x8 -> "s"
+    0x9 -> "ns"
+    0xa -> "p"
+    0xb -> "np"
+    0xc -> "l"
+    0xd -> "nl"
+    0xe -> "le"
+    0xf -> "nle"
 
 pattern N cc <- (notCond -> cc)
   where N = notCond
@@ -568,8 +582,9 @@ notCond (Condition c) = Condition $ c `xor` 1
 
 -------------------------------------------------------------- asm code lines
 
+{- HLINT ignore -}
 data CodeLine where
-  Ret_, Nop_, PushF_, PopF_, Cmc_, Clc_, Stc_, Cli_, Sti_, Cld_, Std_   :: CodeLine
+  Ret_, Nop_, PushF_, PopF_, Cmc_, Clc_, Stc_, Cli_, Sti_, Cld_, Std_ :: CodeLine
 
   Inc_, Dec_, Not_, Neg_, Bswap                               :: IsSize s => Operand RW s -> CodeLine
   Add_, Or_, Adc_, Sbb_, And_, Sub_, Xor_, Cmp_, Test_, Mov_, Bsf, Bsr :: IsSize s => Operand RW s -> Operand r s -> CodeLine

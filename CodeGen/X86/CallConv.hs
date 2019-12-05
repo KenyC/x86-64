@@ -2,7 +2,6 @@
 
 {-# language NoMonomorphismRestriction #-}
 {-# language CPP #-}
-{-# language BangPatterns #-}
 {-# language DataKinds #-}
 module CodeGen.X86.CallConv where
 
@@ -19,33 +18,33 @@ import CodeGen.X86.CodeGen
 -- On Win64 the caller have to reserve 32 byte "shadow space" on the stack (and clean up after)
 callFun :: Operand RW S64 -> FunPtr a -> Code
 callFun r p = do
-    sub rsp 32
-    mov r (fromIntegral $ ptrToIntPtr $ castFunPtrToPtr p)
-    call r
-    add rsp 32
+  sub rsp 32
+  mov r (fromIntegral $ ptrToIntPtr $ castFunPtrToPtr p)
+  call r
+  add rsp 32
 
 #elif defined (darwin_HOST_OS)
 
 -- OSX requires 16 byte alignment of the stack...
 callFun :: Operand RW S64 -> FunPtr a -> Code
 callFun r p = do
-    push r15              -- we will use r15 (non-volatile) to store old rsp
-    mov r15 15            -- 0xf
-    not_ r15              -- 0xffff ... fff0
-    and_ r15 rsp          -- align rsp into r15
-    xchg r15 rsp          -- new rsp = aligned, r15 = old rsp
-    mov r (fromIntegral $ ptrToIntPtr $ castFunPtrToPtr p)
-    call r
-    mov rsp r15           -- restore rsp
-    pop r15               -- restore r15
+  push r15              -- we will use r15 (non-volatile) to store old rsp
+  mov r15 15            -- 0xf
+  not_ r15              -- 0xffff ... fff0
+  and_ r15 rsp          -- align rsp into r15
+  xchg r15 rsp          -- new rsp = aligned, r15 = old rsp
+  mov r (fromIntegral $ ptrToIntPtr $ castFunPtrToPtr p)
+  call r
+  mov rsp r15           -- restore rsp
+  pop r15               -- restore r15
 
 #else
 
 -- helper to call a function
 callFun :: Operand RW S64 -> FunPtr a -> Code
 callFun r p = do
-    mov r $ fromIntegral $ ptrToIntPtr $ castFunPtrToPtr p
-    call r
+  mov r $ fromIntegral $ ptrToIntPtr $ castFunPtrToPtr p
+  call r
 
 #endif
 
@@ -91,16 +90,16 @@ arg4 = r9
 result = rax
 
 prologue = do
-    push rbp
-    push rbx
-    push rdi
-    push rsi
+  push rbp
+  push rbx
+  push rdi
+  push rsi
 
 epilogue = do
-    pop rsi
-    pop rdi
-    pop rbx
-    pop rbp
+  pop rsi
+  pop rdi
+  pop rbx
+  pop rbp
 
 #else
 
@@ -117,12 +116,12 @@ arg6 = r9
 result = rax
 
 prologue = do
-    push rbp
-    push rbx
+  push rbp
+  push rbx
 
 epilogue = do
-    pop rbx
-    pop rbp
+  pop rbx
+  pop rbp
 
 #endif
 
