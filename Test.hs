@@ -1,4 +1,4 @@
-import CodeGen.X86
+import CodeGen.X86.Tests
 
 main = runTests
 
