@@ -242,8 +242,8 @@ evalOp op c = case op of
   And_{}  -> mk (.&.)
   Sub_{}  -> mk (-)
   Xor_{}  -> mk xor
-  Cmp_{}  -> mk_ (-) (const a)
-  Test_{} -> mk_ (.&.) (const a)
+  Cmp_{}  -> mk_ (-) const
+  Test_{} -> mk_ (.&.) const
   Mov_{}  -> \a b -> ((c, False), b)
   Shl_{}  -> \a b ->
     let i = fromIntegral (b .&. shiftMask)
