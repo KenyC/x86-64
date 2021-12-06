@@ -31,7 +31,7 @@ import Control.Monad.State
 
 ------------------------------------------------------- utils
 
-everyNth n [] = []
+everyNth _ [] = []
 everyNth n xs = take n xs: everyNth n (drop n xs)
 
 showNibble :: (Integral a, Bits a) => Int -> a -> Char
@@ -88,6 +88,7 @@ mkSize  2 = S16
 mkSize  4 = S32
 mkSize  8 = S64
 mkSize 16 = S128
+mkSize  n = error $ "No size corresponding to " ++ show n 
 
 sizeLen = \case
   S8   -> 1
@@ -95,6 +96,7 @@ sizeLen = \case
   S32  -> 4
   S64  -> 8
   S128 -> 16
+  S1   -> error "1 bit has no size in bytes"
 
 class HasSize a where size :: a -> Size
 
@@ -162,12 +164,14 @@ toScale = \case
   2 -> s2
   4 -> s4
   8 -> s8
+  _ -> error "No corresponding scale"
 
 scaleFactor (Scale i) = case i of
   0x0 -> 1
   0x1 -> 2
   0x2 -> 4
   0x3 -> 8
+  _   -> error "No corresponding scale factor"
 
 ------------------------------------------------------- operand
 
@@ -264,6 +268,7 @@ instance IsSize s => Show (Reg s) where
       S16 -> r0 ++ map (++ "w") r8
       S32 -> map ('e' :) r0 ++ map (++ "d") r8
       S64 -> map ('r' :) r0 ++ r8
+      _   -> error "No registers of that size!"
    where
     r0 = ["ax", "cx", "dx", "bx", "sp", "bp", "si", "di"]
     r8 = ["r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"]
@@ -275,6 +280,7 @@ instance IsSize s => Show (Addr s) where
     shb (Just x) = [(True, show x)]
     shd NoDisp   = []
     shd (Disp x) = [(signum x /= (-1), show (abs x))]
+    shd _        = undefined -- Not sure which other cases are not matched
     shi NoIndex         = []
     shi (IndexReg sc x) = [(True, show' (scaleFactor sc) ++ show x)]
     show' 1 = ""
@@ -298,7 +304,7 @@ instance IsSize s => Show (Operand a s) where
 
 instance Show a => Show (Immediate a) where
   show (Immediate x) = show x
-  show (LabelRelValue s x) = show x
+  show (LabelRelValue _ x) = show x
 
 instance IsSize s => HasSize (Operand a s) where
   size _ = size (ssize :: SSize s)
@@ -320,6 +326,7 @@ instance IsSize s => HasSize (IndexReg s) where
 
 instance (rw ~ R) => Num (Operand rw s) where
   negate (ImmOp (Immediate x)) = ImmOp $ Immediate $ negate x
+  negate _ = error "Cannot negate that operand!"
   fromInteger (Integral x) = ImmOp $ Immediate x
   fromInteger z = error $ show z ++ " does not fit into " -- ++ show s
   (+) = error "(+) @Operand"
@@ -335,6 +342,7 @@ instance Semigroup (Addr s) where
 instance Semigroup (IndexReg s) where
   i <> NoIndex = i
   NoIndex <> i = i
+  _ <> _ = error "Can't combine two different indices together"
 #endif
 
 instance Monoid (Addr s) where
@@ -370,6 +378,7 @@ disp :: (Bits a, Integral a) => a -> Addr s
 disp (Integral x)
   | x == 0 = mempty
   | otherwise = Addr Nothing (Disp x) NoIndex
+disp _ = error "No integral size conversion"
 
 data Address :: Size -> * where
   Address :: [(Int, Reg s)] -> Int -> Address s
@@ -383,6 +392,7 @@ instance Num (Address s) where
 
   Address [] t * a            = scaleAddress (t *) a
   a            * Address [] t = scaleAddress (t *) a
+  _ * _ = error "Can't multiply addresses"
 
   Address rs d + Address rs' d' = Address (f rs rs') (d + d')   where
     f []              rs                  = rs
@@ -402,6 +412,7 @@ makeAddr (Address [(t, r)] d) = index' t r <> disp d
 makeAddr (Address [(1, r), (1, r'@(NormalReg 0x4))] d) = base r' <> index1 r <> disp d
 makeAddr (Address [(1, r), (t, r')] d) = base r <> index' t r' <> disp d
 makeAddr (Address [(t, r'), (1, r)] d) = base r <> index' t r' <> disp d
+makeAddr _ = error "Can't make address"
 
 class FromReg c where
   fromReg :: Reg s -> c s
@@ -519,6 +530,7 @@ resizeOperand (IPMemOp a) = IPMemOp a
 
 resizeRegCode :: Reg s -> Reg s'
 resizeRegCode (NormalReg i) = NormalReg i
+resizeRegCode _ = error "Can't resize reg code!"
 
 pattern MemLike <- (isMemOp -> True)
 
@@ -573,6 +585,7 @@ instance Show Condition where
     0xd -> "nl"
     0xe -> "le"
     0xf -> "nle"
+    _   -> error "Condition does not exist."
 
 pattern N cc <- (notCond -> cc)
   where N = notCond

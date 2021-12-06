@@ -52,7 +52,9 @@ library
     TupleSections
     ExistentialQuantification
     ScopedTypeVariables
-
+  ghc-options:   -Wincomplete-patterns 
+                 -Wmissing-fields 
+                 -Wunused-matches
   build-depends:
     base       >= 4.8  && <4.15,
     monads-tf  >= 0.1  && <0.2,

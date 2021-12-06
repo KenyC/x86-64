@@ -54,6 +54,7 @@ integralToBytes True  S64 w = toBytes <$> (toIntegralSized w :: Maybe Int64)
 integralToBytes True  S32 w = toBytes <$> (toIntegralSized w :: Maybe Int32)
 integralToBytes True  S16 w = toBytes <$> (toIntegralSized w :: Maybe Int16)
 integralToBytes True  S8  w = toBytes <$> (toIntegralSized w :: Maybe Int8)
+integralToBytes _     _   _ = error "No possible conversion"
 
 ------------------------------------------------------- register packed with its size
 
@@ -61,8 +62,9 @@ data SReg where
   SReg :: IsSize s => Reg s -> SReg
 
 phisicalReg :: SReg -> Reg S64
-phisicalReg (SReg (HighReg x)) = NormalReg x
+phisicalReg (SReg (HighReg x))   = NormalReg x
 phisicalReg (SReg (NormalReg x)) = NormalReg x
+phisicalReg (SReg (XMM _))       = error "No corresponding physical register."
 
 isHigh (SReg HighReg{}) = True
 isHigh _ = False
@@ -93,6 +95,7 @@ data CodeBuilder = CodeBuilder
   }
 
 codeBuilderLength (CodeBuilder a b _) | a == b = a
+codeBuilderLength _ = error "No length to report"
 
 type LabelState = [[(Size, Int, Int)]]
 
@@ -138,6 +141,7 @@ mkRef s@(sizeLen -> sn) offset (Label l_) = CodeBuilder sn sn $ do
           S32  -> case vx of
             Integral j -> toBytes (j :: Int32)
             _ -> error $ show vx ++ " does not fit into an Int32"
+          _ -> error "No size"
         ~(bs, ps')
           | l < 0 = (z, ps)
           | otherwise = ([], ins l (s, n, - n - offset) ps)
@@ -179,8 +183,8 @@ mkAutoRef ss (Label l_) = CodeBuilder (minimum sizes) (maximum sizes) $ do
 
         g' [] = error $ show vx' ++ " does not fit into auto size"
         g' ((s, c): ss) = case (s, vx') of
-          (S8,  Integral (j :: Int8)) -> (c, s)
-          (S32, Integral (j :: Int32)) -> (c, s)
+          (S8,  Integral (_ :: Int8))  -> (c, s)
+          (S32, Integral (_ :: Int32)) -> (c, s)
           _ -> g' ss
 
         l = l_ - length ls
@@ -256,6 +260,7 @@ nops = \case
   9 -> [0x66, 0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00]
   ((+(-2)) -> Integral x) -> [0xeb] ++ toBytes (x :: Int8) ++ replicate (fromIntegral x) 0x00
   ((+(-5)) -> Integral x) -> [0xe9] ++ toBytes (x :: Int32) ++ replicate (fromIntegral x) 0x00
+  _ -> error "No nop code"
 
 mkCodeBuilder' :: CodeLine -> CodeBuilder
 mkCodeBuilder' = \case
@@ -427,6 +432,7 @@ mkCodeBuilder' = \case
         S32 -> mem32pre r <> prefix40 x
         S64 -> mem32pre r <> prefix40 (0x8 .|. x)
         S128 -> mem32pre r <> codeByte 0x66 <> maybePrefix40
+        _ -> error "No size for single bit"
 
       mem32pre :: Operand r s -> CodeBuilder
       mem32pre (MemOp r@Addr{}) | size r == S32 = codeByte 0x67
