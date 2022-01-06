@@ -14,7 +14,7 @@
 {-# language FlexibleInstances #-}
 {-# language GeneralizedNewtypeDeriving #-}
 {-# language RecursiveDo #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# language TemplateHaskell #-}
 module CodeGen.X86.Tests
   ( runTests
   )
