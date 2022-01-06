@@ -304,6 +304,7 @@ mkCodeBuilder' = \case
 
   Not_  a -> op1 0x7b 0x2 a
   Neg_  a -> op1 0x7b 0x3 a
+  Mul_  a -> op1 0x7b 0x4 a
   Inc_  a -> op1 0x7f 0x0 a
   Dec_  a -> op1 0x7f 0x1 a
   Bswap a@RegOp{} | size a >= S32 -> op1 0x07 0x1 a
@@ -585,6 +586,7 @@ cli        = mkCodeLine Cli_
 sti        = mkCodeLine Sti_
 cld        = mkCodeLine Cld_
 std        = mkCodeLine Std_
+mul a      = mkCodeLine (Mul_ a)
 inc a      = mkCodeLine (Inc_ a)
 dec a      = mkCodeLine (Dec_ a)
 not_ a     = mkCodeLine (Not_ a)

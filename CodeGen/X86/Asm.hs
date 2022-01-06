@@ -588,6 +588,7 @@ data CodeLine where
 
   Inc_, Dec_, Not_, Neg_, Bswap                               :: IsSize s => Operand RW s -> CodeLine
   Add_, Or_, Adc_, Sbb_, And_, Sub_, Xor_, Cmp_, Test_, Mov_, Bsf, Bsr :: IsSize s => Operand RW s -> Operand r s -> CodeLine
+  Mul_ :: (IsSize s) => Operand r s -> CodeLine
   Rol_, Ror_, Rcl_, Rcr_, Shl_, Shr_, Sar_                 :: IsSize s => Operand RW s -> Operand r S8 -> CodeLine
   Bt :: IsSize s => Operand r s -> Operand RW s -> CodeLine
 
@@ -674,6 +675,7 @@ showCodeLine = \case
   Psrldq_ op1 op2 -> showOp2 "psrldq" op1 op2
   Psraw_  op1 op2 -> showOp2 "psraw"  op1 op2
   Psrad_  op1 op2 -> showOp2 "psrad"  op1 op2
+  Mul_  op -> showOp1 "mul"  op
   Inc_  op -> showOp1 "inc"  op
   Dec_  op -> showOp1 "dec"  op
   Not_  op -> showOp1 "not"  op
