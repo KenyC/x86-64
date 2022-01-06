@@ -88,6 +88,7 @@ module CodeGen.X86
     , bsf
     , bsr
     -- ** Arithmetic
+    , mul
     , inc
     , dec
     , neg
